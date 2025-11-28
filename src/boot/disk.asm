@@ -8,11 +8,14 @@
 ; dh = Head (0 indexed)
 ; cl = Sector (1 indexed)
 ; al = Amount of sectors to read
+
 ; On success:
 ; al = number of sectors read
+
 ; On failure:
 ; cf = set to signal general fault
 ; al = number of sectors read != requested
+
 disk_load:
     push dx
     mov ah, 0x02   ; Disk read
@@ -26,6 +29,7 @@ disk_load:
     cmp dh, al
     jne DISK_ERROR ; Jump if expected number of sectors weren't read
     ret
+    
 DISK_ERROR:
     call reg_debug
     mov bx, DISK_ERROR_MSG
