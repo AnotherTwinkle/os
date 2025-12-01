@@ -4,207 +4,215 @@
 #include "kernel/idt.h"
 #include "kernel/util.h"
 #include "screen.h"
+#include "kbdmap.h"
 
-static void callback(RegisterState r) {
-	u8 code = port_byte_in(0x60);
-	char sc_ascii[10];
-	itoa(code, sc_ascii);
-    print(sc_ascii);
-	print(" ");
-	kbdprint(code);
-	print("\n");
+#define inb port_byte_in
+#define outb port_byte_out
+
+#define SUB_FREE 0xFFFFFFFF
+
+char print_buf[12];
+
+struct KeyboardState kbd_state;
+struct KeyEventQueue kbd_queue;
+
+// Helper function to find the minimum active subscriber head
+u32 _kbd_min_subscriber_head(KeyEventQueue* q) {
+    u32 min_head = q->head;
+    int active_subs = 0;
+
+    for (int i = 0; i < KBD_MAX_SUBSCRIBERS; i++) {
+        if (q->subscriber_heads[i] != SUB_FREE) {
+            if (!active_subs || q->subscriber_heads[i] < min_head) {
+                min_head = q->subscriber_heads[i];
+            }
+            active_subs = 1;
+        }
+    }
+    return active_subs ? min_head : q->head;
+}
+
+void kbd_queue_init(KeyEventQueue* q) {
+	q->head = 0;
+	q->tail = 0;
+	for (int i = 0; i < KBD_MAX_SUBSCRIBERS; i++) {
+		q->subscriber_heads[i] = SUB_FREE;
+	}
+}
+
+u32 kbd_queue_subscribe(KeyEventQueue* q) {
+	for (int i = 0; i < KBD_MAX_SUBSCRIBERS; i++) {
+		if (q->subscriber_heads[i] == SUB_FREE) {
+			q->subscriber_heads[i] = q->head;
+			return i;
+		}
+	}
+
+	return SUB_FREE; // Changed to SUB_FREE to match the definition
+}
+
+u32 kbd_queue_unsubscribe(KeyEventQueue* q, u32 id) {
+	q->subscriber_heads[id] = SUB_FREE;
+    q->tail = _kbd_min_subscriber_head(q);
+    return 0;
+}
+
+void kbd_enqueue(KeyEventQueue* q, KeyEvent event) {
+    u32 next_head = (q->head + 1) % KBD_MAX_EVENTS;
+
+    // Check if we just wrapped and overwrote the oldest event
+    if (next_head == q->tail) {
+        
+        // If overwrite is imminent, advance any subscriber head pointing to the
+        // event at q->head (the one about to be overwritten).
+        for (int i = 0; i < KBD_MAX_SUBSCRIBERS; i++) {
+            if (q->subscriber_heads[i] != SUB_FREE) {
+                if (q->subscriber_heads[i] == q->head) {
+                    q->subscriber_heads[i] = next_head;
+                }
+            }
+        }
+        
+        // Find the new tail: smallest subscriber head
+        q->tail = _kbd_min_subscriber_head(q);
+    }
+
+    q->buffer[q->head] = event;
+    q->head = next_head;
+}
+
+// returns 0 : nothing to fetch
+u8 kbd_dequeue(KeyEventQueue* q, int id, KeyEvent* out) {
+	u32 pos = q->subscriber_heads[id];
+	// Nothing to read if subscriber head has caught up to head
+	if (pos == q->head){
+		return 0;
+	}
+
+	*out = q->buffer[pos];
+	q->subscriber_heads[id] = (pos + 1) % KBD_MAX_EVENTS;
+
+	// Optional: advance tail if all subscribers have consumed the oldest event
+    q->tail = _kbd_min_subscriber_head(q);
+
+	return 1;
+}
+
+/* 
+Todo: Implement E0 prefixed keys 
+Currently the E0 byte is ignored (although the state is updated)
+but the next byte is treated as normal
+*/
+
+void callback(RegisterState r) {
+	u8 code = inb(KBD_DATA_PORT);
+
+	if (code == CH_ESCAPE && kbd_state.waitingForEscapeData) {
+		/* We have recieved two back to back escapes, invalid state */
+		kbd_state.waitingForEscapeData = 0;
+		return;
+	}
+
+	if (code == CH_ESCAPE) {
+		kbd_state.waitingForEscapeData = 1;
+		return;
+	}
+
+	if (code == CH_EXTENDED) {
+		kbd_state.waitingForSecondByte = 1;
+		return;
+	} 
+
+	KeyEvent event;
+	event.code = code;
+	event.flags = 0;
+
+	if (kbd_state.waitingForEscapeData) {
+		kbd_state.waitingForEscapeData = 0;
+	} else {
+		event.flags |= 0x1;
+	}
+
+	if (kbd_state.waitingForSecondByte) {
+		kbd_state.waitingForSecondByte = 1;
+	}
+
+
+	// Handle keys that alter keyboard state
+	if (code == KEY_LCTRL || code == KEY_RCTRL) {
+		kbd_state.ctrlPressed ^= 1;
+		event.flags |= 0x2;
+	} else if (code == KEY_LSHIFT || code == KEY_RSHIFT) {
+		kbd_state.shiftPressed ^= 1;
+		event.flags |= 0x2;
+	} else if (code == KEY_LALT || code == KEY_RALT) {
+		kbd_state.altPresssed ^= 1;
+		event.flags |= 0x2;
+	} else if (code == KEY_LSUPER || code == KEY_RSUPER) {
+		kbd_state.superPressed ^= 1;
+		event.flags |= 0x2;
+	}
+
+	// set numpad flag
+	if (code >= 0x54 && code <= 0x64) {
+		event.flags |= 0x4;
+	}
+
+	// set printable flag
+	//            A              0               _space             /
+	if ((code >= 0x4 && code <= 0x27) || (code >= 0x2c && code <= 0x38)) {
+		event.flags |= 0x8;
+	}
+
+	// set control sequence flag
+	if (code == KEY_RETURN || code == KEY_BACKSPACE || code == KEY_TAB) {
+		event.flags |= 0x10;
+	}
+
+	kbd_enqueue(&kbd_queue, event);
 }
 
 void KBD_INIT() {
-	register_interrupt_handler(IRQ1, callback);
-}
+	__asm__ volatile ("cli");
 
-void kbdprint(u8 scancode) {
-    switch (scancode) {
-        case 0x0:
-            print("ERROR");
-            break;
-        case 0x1:
-            print("ESC");
-            break;
-        case 0x2:
-            print("1");
-            break;
-        case 0x3:
-            print("2");
-            break;
-        case 0x4:
-            print("3");
-            break;
-        case 0x5:
-            print("4");
-            break;
-        case 0x6:
-            print("5");
-            break;
-        case 0x7:
-            print("6");
-            break;
-        case 0x8:
-            print("7");
-            break;
-        case 0x9:
-            print("8");
-            break;
-        case 0x0A:
-            print("9");
-            break;
-        case 0x0B:
-            print("0");
-            break;
-        case 0x0C:
-            print("-");
-            break;
-        case 0x0D:
-            print("+");
-            break;
-        case 0x0E:
-            print("Backspace");
-            break;
-        case 0x0F:
-            print("Tab");
-            break;
-        case 0x10:
-            print("Q");
-            break;
-        case 0x11:
-            print("W");
-            break;
-        case 0x12:
-            print("E");
-            break;
-        case 0x13:
-            print("R");
-            break;
-        case 0x14:
-            print("T");
-            break;
-        case 0x15:
-            print("Y");
-            break;
-        case 0x16:
-            print("U");
-            break;
-        case 0x17:
-            print("I");
-            break;
-        case 0x18:
-            print("O");
-            break;
-        case 0x19:
-            print("P");
-            break;
-		case 0x1A:
-			print("[");
-			break;
-		case 0x1B:
-			print("]");
-			break;
-		case 0x1C:
-			print("\n");
-			break;
-		case 0x1D:
-			print("LCtrl");
-			break;
-		case 0x1E:
-			print("A");
-			break;
-		case 0x1F:
-			print("S");
-			break;
-        case 0x20:
-            print("D");
-            break;
-        case 0x21:
-            print("F");
-            break;
-        case 0x22:
-            print("G");
-            break;
-        case 0x23:
-            print("H");
-            break;
-        case 0x24:
-            print("J");
-            break;
-        case 0x25:
-            print("K");
-            break;
-        case 0x26:
-            print("L");
-            break;
-        case 0x27:
-            print(";");
-            break;
-        case 0x28:
-            print("'");
-            break;
-        case 0x29:
-            print("`");
-            break;
-		case 0x2A:
-			print("LShift");
-			break;
-		case 0x2B:
-			print("\\");
-			break;
-		case 0x2C:
-			print("Z");
-			break;
-		case 0x2D:
-			print("X");
-			break;
-		case 0x2E:
-			print("C");
-			break;
-		case 0x2F:
-			print("V");
-			break;
-        case 0x30:
-            print("B");
-            break;
-        case 0x31:
-            print("N");
-            break;
-        case 0x32:
-            print("M");
-            break;
-        case 0x33:
-            print(",");
-            break;
-        case 0x34:
-            print(".");
-            break;
-        case 0x35:
-            print("/");
-            break;
-        case 0x36:
-            print("Rshift");
-            break;
-        case 0x37:
-            print("Keypad *");
-            break;
-        case 0x38:
-            print("LAlt");
-            break;
-        case 0x39:
-            print(" ");
-            break;
-        default:
-            /* 'keuyp' event corresponds to the 'keydown' + 0x80 
-             * it may still be a scancode we haven't implemented yet, or
-             * maybe a control/escape sequence */
-            if (scancode <= 0x7f) {
-                print("Unknown key down");
-            } else if (scancode <= 0x39 + 0x80) {
-                // print("key up ");
-                // kbdprint(scancode - 0x80);
-            } else print("Unknown key up");
-            break;
-    }
+	// Read configuration byte
+	outb(KBD_CTRL_PORT, 0x20);
+	u8 config_byte = inb(KBD_DATA_PORT);
+
+	// clear bit 6 to disable scan code translation
+	config_byte &= ~0x40;
+	// clear bit 0 to disable IRQs
+	config_byte &= ~0x01;
+
+	// Write config byte
+	outb(KBD_CTRL_PORT, 0x60);
+	outb(KBD_DATA_PORT, config_byte);
+
+	outb(KBD_DATA_PORT, 0xF0); // Get/upd set
+	inb(KBD_DATA_PORT);
+	outb(KBD_DATA_PORT, 0x02); // set 2
+	inb(KBD_DATA_PORT);
+
+
+	// Read config byte again
+	outb(KBD_CTRL_PORT, 0x20);
+	config_byte = inb(KBD_DATA_PORT);
+	config_byte |= 0x01; // re enable irq
+
+	outb(KBD_CTRL_PORT, 0x60);
+	outb(KBD_DATA_PORT, config_byte);
+
+	register_interrupt_handler(IRQ1, callback);
+
+	kbd_queue_init(&kbd_queue);
+
+
+	kbd_state.shiftPressed = 0;
+	kbd_state.ctrlPressed = 0;
+	kbd_state.altPresssed = 0;
+	kbd_state.superPressed = 0;
+	kbd_state.waitingForEscapeData= 0;
+	kbd_state.waitingForSecondByte = 0;
+
+	__asm__ volatile ("sti");
 }

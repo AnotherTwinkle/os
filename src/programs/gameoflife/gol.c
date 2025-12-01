@@ -7,10 +7,10 @@
 #define ON '*'
 #define OFF ' '
 
-char ibuf[MAXR][MAXC];
-char next[MAXR][MAXC];
+static char ibuf[MAXR][MAXC];
+static char next[MAXR][MAXC];
 
-char int_print_buffer[12];
+static char int_print_buffer[12];
 
 void PROGRAM_GOL_MAIN() {
 	srand(SEED + get_ticks());

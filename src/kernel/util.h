@@ -6,6 +6,8 @@ typedef unsigned   int u32;
 typedef            int s32;
 
 #define RAND_MAX 32767
+#define TRUE 1
+#define FALSE 0
 
 void memcpy(char* dest, char* src, int num_bytes);
 void memset(char* start, char c, int num_bytes);

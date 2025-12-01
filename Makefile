@@ -19,7 +19,7 @@ run : all
 
 os.img : src/boot/boot.bin kernel.bin
 	cat $^ > $@
-	truncate -s 20480 $@
+	truncate -s 32768 $@
 
 kernel.bin: src/boot/kernel_entry.o ${OBJ}
 	ld -m elf_i386 -o $@ -Ttext 0x1000 $^ --oformat binary

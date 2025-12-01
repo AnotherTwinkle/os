@@ -1,0 +1,1 @@
+void PROGRAM_KBDTEST_MAIN();

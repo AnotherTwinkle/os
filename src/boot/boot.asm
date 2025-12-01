@@ -11,9 +11,10 @@ GREETINGS_16BIT: db "Hello, 16 bits!", 0
 GREETINGS_PM : db "Welcome to 32-bit land!", 0
 MSG_LOADING_KERNEL : db "Loading kernel...", 0
 
-KERNEL_OFFSET equ 0x1000  ; WARNING : make sure kernel is at 0x1000
+KERNEL_OFFSET equ 0x1000  ; WARNING : make sure kernel is at 0x1000 while building
 
 [bits 16]
+
 bootloader_init:
 	; BIOS stores boot drive in dl
 	mov [BOOT_DRIVE], dl
@@ -33,7 +34,12 @@ bootloader_init:
 	; mov dx, KERNEL_OFFSET
 	; call print_hex
 
-	call load_kernel
+	; Enable a20... It is enabled by default on qemu though
+	in al, 0x92
+	or al, 2
+	out 0x92, al
+
+	call load_kernel 
 
 	jmp switch_to_protected_mode  ; we are not returning
 
