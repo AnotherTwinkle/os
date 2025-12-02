@@ -46,7 +46,8 @@ void reverse(char str[], int length) {
     }
 }
 
-char *itoa(int value, char *buffer) {
+char* itoa(int value) {
+    static char buffer[12]; // enough for 32-bit int + sign + null
     int i = 0;
     int is_negative = 0;
 
@@ -58,59 +59,37 @@ char *itoa(int value, char *buffer) {
 
     if (value < 0) {
         is_negative = 1;
-        // Handle the case for INT_MIN (-2147483648) which cannot be
-        // directly negated by making it positive on some architectures.
-        value = -value; 
+        value = -value;
     }
 
     while (value != 0) {
-        int remainder = value % 10;
-        buffer[i++] = remainder + '0';
-        value = value / 10;
+        buffer[i++] = (value % 10) + '0';
+        value /= 10;
     }
 
-    if (is_negative) {
-        buffer[i++] = '-';
-    }
+    if (is_negative) buffer[i++] = '-';
 
     buffer[i] = '\0';
-
     reverse(buffer, i);
-
     return buffer;
 }
 
-char *itoh(int value, char *buffer) {
-    // Cast to unsigned int to ensure correct bitwise shifting behavior for 32-bit signed integers.
+
+char* itoh(int value) {
+    static char buffer[11]; // "0x" + 8 digits + null
     unsigned int num = (unsigned int)value;
     
-    // "0x" prefix
     buffer[0] = '0';
     buffer[1] = 'x';
-
-    // Loop for 8 hex digits (32 bits), processing 4 bits (1 nibble) at a time
     for (int i = 0; i < 8; i++) {
-        // Calculate the shift amount to target the next nibble from the MSB (7*4=28) down to LSB (0*4=0).
-        int shift = (7 - i) * 4; 
+        int shift = (7 - i) * 4;
         unsigned int nibble = (num >> shift) & 0xF;
-
-        char hex_char;
-        if (nibble < 10) {
-            // Digits 0-9
-            hex_char = '0' + nibble;
-        } else {
-            // Letters A-F (A=10, B=11, ..., F=15)
-            hex_char = 'A' + nibble - 10; 
-        }
-        
-        // Write the character to the buffer, starting at index 2 (after "0x")
-        buffer[2 + i] = hex_char;
+        buffer[2 + i] = (nibble < 10) ? ('0' + nibble) : ('A' + nibble - 10);
     }
-
-    // Null terminator after 0x + 8 digits = index 10
-    buffer[10] = '\0'; 
+    buffer[10] = '\0';
     return buffer;
 }
+
 
 void sleep(u32 ms) {
     u32 start = get_ticks();

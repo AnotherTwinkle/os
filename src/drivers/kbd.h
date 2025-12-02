@@ -3,8 +3,14 @@
 #define KBD_DATA_PORT 0x60
 #define KBD_CMD_PORT 0x60
 #define KBD_CTRL_PORT 0x64
-
 #define KBD_MAX_EVENTS 256 // Should be enough.. right?
+
+#define KBD_FLAG_MAKE 0x1
+#define KBD_FLAG_ALTER_STATE 0x2
+#define KBD_FLAG_NUMPAD 0x4
+#define KBD_FLAG_MAPPED 0x8
+#define KBD_FLAG_CCHAR 0x10
+#define KBD_FLAG_EXTENDED 0x20
 
 /*
 As long as we are single process mode, there will only ever be
@@ -25,7 +31,9 @@ bit 2:
 bit 3:
 	set if this event has a character mapping
 bit 4:
-	set if this event is a control sequence
+	set if this event is a control character
+bit 5:
+	set if this event has the E0 byte set
 */
 
 typedef struct KeyEvent {

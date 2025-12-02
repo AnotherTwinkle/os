@@ -123,4 +123,11 @@ const struct KeyMap kbd_map =
         [KEY_KP8] = '8',
         [KEY_KP9] = '9',
     },
+    .cchar = 
+    {
+        [KEY_RETURN] = "\n",
+        [KEY_BACKSPACE] = "\b",
+        [KEY_TAB] = "\t",
+        [KEY_ESC] = "\x1B"
+    }
 };

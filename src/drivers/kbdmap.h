@@ -174,9 +174,10 @@
 #define KEY_WAKE     0X5E
 
 struct KeyMap {
-	u8 base[128];
-	u8 shift[128];
-	u8 numlock[128];
+	char  base[128];
+	char  shift[128];
+	char  numlock[128];
+	char* cchar[128];
 };
 
 extern const struct KeyMap kbd_map;

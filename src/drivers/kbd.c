@@ -98,6 +98,16 @@ u8 kbd_dequeue(KeyEventQueue* q, int id, KeyEvent* out) {
 	return 1;
 }
 
+
+u8 is_code_printable(u8 code) {
+	if (code >= 128) return 0;
+	return (kbd_map.base[code]
+		 || kbd_map.shift[code]
+		 || kbd_map.numlock[code]
+		 || kbd_map.cchar[code]
+		 );
+}
+
 /* 
 Todo: Implement E0 prefixed keys 
 Currently the E0 byte is ignored (although the state is updated)
@@ -133,11 +143,6 @@ void callback(RegisterState r) {
 		event.flags |= 0x1;
 	}
 
-	if (kbd_state.waitingForSecondByte) {
-		kbd_state.waitingForSecondByte = 1;
-	}
-
-
 	// Handle keys that alter keyboard state
 	if (code == KEY_LCTRL || code == KEY_RCTRL) {
 		kbd_state.ctrlPressed ^= 1;
@@ -154,19 +159,19 @@ void callback(RegisterState r) {
 	}
 
 	// set numpad flag
-	if (code >= 0x54 && code <= 0x64) {
-		event.flags |= 0x4;
-	}
+	if (kbd_map.numlock[code]) event.flags |= 0x4;
 
 	// set printable flag
-	//            A              0               _space             /
-	if ((code >= 0x4 && code <= 0x27) || (code >= 0x2c && code <= 0x38)) {
-		event.flags |= 0x8;
-	}
+	if (is_code_printable(code)) event.flags |= 0x8;
 
-	// set control sequence flag
+	// set control char flag
 	if (code == KEY_RETURN || code == KEY_BACKSPACE || code == KEY_TAB) {
 		event.flags |= 0x10;
+	}
+
+	if (kbd_state.waitingForSecondByte) {
+		event.flags |= 0x20;
+		kbd_state.waitingForSecondByte = 0;
 	}
 
 	kbd_enqueue(&kbd_queue, event);

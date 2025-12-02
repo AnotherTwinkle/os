@@ -59,6 +59,38 @@ void print_char(char c, int row, int col, char attr) {
 		col = MAXC - 1; // go to end of current row
 	} else if (c == '\r') {
 		row -= 1, col = MAXC - 1; // end of previous row
+	} else if (c == '\b') {
+		if (row == 0 && col == 0) return;
+
+		// Our cursor is now at the position of the  next write
+
+		// Get the previous position
+		int prow = row;
+		int pcol = col;
+
+		if (col == 0) {
+			// Go to the end of preivous row
+			prow--;
+			pcol = MAXC - 1;
+
+		} else {
+			// Row remains unchanged
+			pcol--;
+		}
+
+		int poffset = get_offset(prow, pcol);
+		// Change the character there
+		vidmem[poffset] = 0x0;
+		while (poffset >= 0 && vidmem[poffset] == 0x0) poffset -= 2;
+		// println(itoa(poffset));
+		poffset += 2;
+		set_cursor(handle_scroll(poffset));
+		return; 
+
+		// This is terrible backspace handling and will be fixed
+		// when I plan out a seperate text output system
+		// for the pixel display driver
+
 	} else {
 		vidmem[offset] = c;
 		vidmem[offset + 1] = attr;
@@ -67,7 +99,7 @@ void print_char(char c, int row, int col, char attr) {
 	offset = get_offset(row, col);
 	offset += 2;
 	
-	// handle_scroll(offset); // will handle cursor position
+	// will handle cursor position
 	set_cursor(handle_scroll(offset));
 }
 

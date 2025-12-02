@@ -17,8 +17,8 @@ char *strcpy(char *dest, const char *src);
 
 void reverse(char str[], int length);
 
-char *itoa(int value, char *buffer);
-char *itoh(int value, char *buffer);
+char *itoa(int value);
+char *itoh(int value);
 
 void sleep(u32 ms);
 
