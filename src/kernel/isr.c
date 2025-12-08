@@ -1,6 +1,5 @@
 #include "util.h"
 #include "isr.h"
-#include "drivers/screen.h"
 #include "io.h"
 
 ISR interrupt_handlers[256];
@@ -54,8 +53,8 @@ void irq_handler(RegisterState r) {
 	// Send end of interrupt to PICs
 	// If it comes from slave, gotta send to master and slave
 
-	if (r.int_no >= 40) port_byte_out(0xA0, 0x20);
-	port_byte_out(0x20, 0x20);
+	if (r.int_no >= 40) outportb(0xA0, 0x20);
+	outportb(0x20, 0x20);
 
 	// If 0 then we have no handlers defined
 	if (interrupt_handlers[r.int_no] != 0) {

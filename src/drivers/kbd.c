@@ -3,11 +3,7 @@
 #include "kernel/isr.h"
 #include "kernel/idt.h"
 #include "kernel/util.h"
-#include "screen.h"
 #include "kbdmap.h"
-
-#define inb port_byte_in
-#define outb port_byte_out
 
 #define SUB_FREE 0xFFFFFFFF
 
@@ -115,7 +111,7 @@ but the next byte is treated as normal
 */
 
 void callback(RegisterState r) {
-	u8 code = inb(KBD_DATA_PORT);
+	u8 code = inportb(KBD_DATA_PORT);
 
 	if (code == CH_ESCAPE && kbd_state.waitingForEscapeData) {
 		/* We have recieved two back to back escapes, invalid state */
@@ -181,8 +177,8 @@ void KBD_INIT() {
 	__asm__ volatile ("cli");
 
 	// Read configuration byte
-	outb(KBD_CTRL_PORT, 0x20);
-	u8 config_byte = inb(KBD_DATA_PORT);
+	outportb(KBD_CTRL_PORT, 0x20);
+	u8 config_byte = inportb(KBD_DATA_PORT);
 
 	// clear bit 6 to disable scan code translation
 	config_byte &= ~0x40;
@@ -190,27 +186,26 @@ void KBD_INIT() {
 	config_byte &= ~0x01;
 
 	// Write config byte
-	outb(KBD_CTRL_PORT, 0x60);
-	outb(KBD_DATA_PORT, config_byte);
+	outportb(KBD_CTRL_PORT, 0x60);
+	outportb(KBD_DATA_PORT, config_byte);
 
-	outb(KBD_DATA_PORT, 0xF0); // Get/upd set
-	inb(KBD_DATA_PORT);
-	outb(KBD_DATA_PORT, 0x02); // set 2
-	inb(KBD_DATA_PORT);
+	outportb(KBD_DATA_PORT, 0xF0); // Get/upd set
+	inportb(KBD_DATA_PORT);
+	outportb(KBD_DATA_PORT, 0x02); // set 2
+	inportb(KBD_DATA_PORT);
 
 
 	// Read config byte again
-	outb(KBD_CTRL_PORT, 0x20);
-	config_byte = inb(KBD_DATA_PORT);
+	outportb(KBD_CTRL_PORT, 0x20);
+	config_byte = inportb(KBD_DATA_PORT);
 	config_byte |= 0x01; // re enable irq
 
-	outb(KBD_CTRL_PORT, 0x60);
-	outb(KBD_DATA_PORT, config_byte);
+	outportb(KBD_CTRL_PORT, 0x60);
+	outportb(KBD_DATA_PORT, config_byte);
 
 	register_interrupt_handler(IRQ1, callback);
 
 	kbd_queue_init(&kbd_queue);
-
 
 	kbd_state.shiftPressed = 0;
 	kbd_state.ctrlPressed = 0;

@@ -3,8 +3,8 @@
 #define byte unsigned char
 #define word unsigned short
 
-byte port_byte_in(word port);
-void port_byte_out(word port, byte data);
+byte inportb(word port);
+void outportb(word port, byte data);
 
-word port_word_in(word port);
-void port_word_out(word port, word data);
+word inportw(word port);
+void outportw(word port, word data);

@@ -3,6 +3,7 @@
 #include "drivers/kbdmap.h"
 #include "kernel/pit.h"
 #include "kernel/util.h"
+#include "drivers/ttylegacy.h"
 
 static int KBD_SUB_ID;
 
@@ -20,33 +21,33 @@ void PROGRAM_KBDTEST_MAIN() {
 		if (!(event.flags & KBD_FLAG_MAPPED)) continue;
 		
 		if (event.flags & (KBD_FLAG_CCHAR)) {
-			print_at(-1, -1, kbd_map.cchar[event.code]);
+			tty_print_at(-1, -1, kbd_map.cchar[event.code]);
 			continue;
 		}
 
 		if (kbd_state.shiftPressed) {
-				print_char(kbd_map.shift[event.code], -1, -1, 0);
+				tty_print_char(kbd_map.shift[event.code], -1, -1, 0);
 		} else {
-				print_char(kbd_map.base[event.code], -1, -1, 0);
+				tty_print_char(kbd_map.base[event.code], -1, -1, 0);
 		}
 	}
 }
 
 void _debug_event_data(KeyEvent* event) {
-	print("Code: ");
-	print(itoh(event->code));
-	print(" ");
-	print(itoh(event->flags));
-	print((event->flags & KBD_FLAG_MAKE) ? " MAKE" : " BREAK");
-	print((event->flags & KBD_FLAG_ALTER_STATE) ? " ASTATE: YES" : " ASTATE: NO");
-	print((event->flags & KBD_FLAG_NUMPAD) ? " MAPPED: YES" : " MAPPED: NO");
-	print((event->flags & KBD_FLAG_CCHAR) ? " CSEQ: YES" : " CSEQ: NO");
-	print((event->flags & KBD_FLAG_EXTENDED) ? " E0 : YES " : " E0 : NO ");
+	tty_print("Code: ");
+	tty_print(itoh(event->code));
+	tty_print(" ");
+	tty_print(itoh(event->flags));
+	tty_print((event->flags & KBD_FLAG_MAKE) ? " MAKE" : " BREAK");
+	tty_print((event->flags & KBD_FLAG_ALTER_STATE) ? " ASTATE: YES" : " ASTATE: NO");
+	tty_print((event->flags & KBD_FLAG_NUMPAD) ? " MAPPED: YES" : " MAPPED: NO");
+	tty_print((event->flags & KBD_FLAG_CCHAR) ? " CSEQ: YES" : " CSEQ: NO");
+	tty_print((event->flags & KBD_FLAG_EXTENDED) ? " E0 : YES " : " E0 : NO ");
 	
 	if (kbd_state.shiftPressed) {
-			print_char(kbd_map.shift[event->code], -1, -1, 0);
+			tty_print_char(kbd_map.shift[event->code], -1, -1, 0);
 	} else {
-			print_char(kbd_map.base[event->code], -1, -1, 0);
+			tty_print_char(kbd_map.base[event->code], -1, -1, 0);
 	}
-	print("\n");
+	tty_print("\n");
 }

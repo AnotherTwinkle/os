@@ -4,21 +4,22 @@
 
 jmp setup
 
+VBA_MODE_INFO:
+	times 256 db 1
+
+
 %include "src/boot/disk.asm"
 %include "src/boot/gdt.asm"
 %include "src/boot/util.asm"
 
 BOOT_DRIVE: db 0
-
+DISPLAY_FAIL_MSG : db "VESA failed", 0
 GREETINGS_16BIT: db "Hello, 16 bits!", 0
 
 KERNEL_START equ 10   	  ; 8 sectors were loaded for stage 2 bootloader
 						  ; So kernel starts at sector 10
 
 KERNEL_OFFSET equ 0xa000 ; WARNING : make sure kernel is at 0x10000 while building
-
-VBA_MODE_INFO:
-	times 256 db 1
 
 [bits 16]
 setup:
@@ -37,10 +38,16 @@ setup:
 	or al, 2
 	out 0x92, al
 
+	call setup_display
 	call load_kernel 
 
 	jmp switch_to_protected_mode  ; we are not returning
 
+setup_display:
+	mov ah, 0x0
+	mov al, 0x13   			; 320*200 256 coors
+	int 0x10
+	
 ; Kernel must be loaded in 16 bit mode using bios routines
 load_kernel:
 	mov dh, 30           	; Load 30 sectors

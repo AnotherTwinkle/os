@@ -1,28 +1,13 @@
-#define VIDEO_ADDRESS 0xb8000
-#define MAXR 25
-#define MAXC 80
+#include <kernel/util.h>
 
-#define WHITE_ON_BLACK 0x0f
-
-#define REG_SCREEN_CTRL 0x3D4
-#define REG_SCREEN_DATA 0x3D5
+#define SCREEN_WIDTH   320
+#define SCREEN_HEIGHT  200
+#define SCREEN_SIZE    SCREEN_WIDTH*SCREEN_HEIGHT
+#define SCREEN_ADDR    0xA0000
 
 void SCREEN_INIT();
-void clear_screen();
+void screen_set_palette(u8 index, u8 r, u8 g, u8 b);
+void screen_clear(u8 color);
+void screen_putpixel(int x, int y, u8 color);
 
-int get_offset(int row, int col);
-
-int get_cursor();
-void set_cursor(int offset);
-
-void print_char(char c, int row, int col, char attr);
-void print_at(int row, int col, char* msg);
-void print(char* msg);
-void println(char* msg);
-void flush(char *buf);
-
-
-void clear_screen();
-
-void scroll_up();
-int handle_scroll(int offset);
+u8 rgb(u8 r, u8 g, u8 b);
