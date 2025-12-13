@@ -75,7 +75,7 @@ Animation anim_walking_right = {
 
 void cat_update(Cat* cat) {
 	if (cat->state == CAT_WALKING) {
-		float speed = 0.02f; // per tick
+		float speed = 0.03f; // per tick
 		float old_posx = cat->posx;
 		float old_posy = cat->posy;
 		if (cat->orientation == FACING_RIGHT) {
@@ -96,7 +96,7 @@ void cat_update(Cat* cat) {
 		cat->dx = cat->posx - old_posx;
 		cat->dy = cat->posy - old_posy;
 
-		if (cat->posx + 1 > SCREEN_WIDTH/(TILE_SIZE*SCALE)) {
+		if (cat->posx + 1 > cur_level->width_t) {
 			cat->orientation = FACING_LEFT;
 			set_anim(&cat->anim_state, &anim_walking_left);
 		}

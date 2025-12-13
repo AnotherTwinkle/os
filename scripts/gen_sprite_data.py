@@ -161,7 +161,7 @@ def generate_binary_files():
 
 			if not os.path.exists(image_path):
 				print(f"Python: Warning. {image_path} expected to exist but it does not. Stop.")
-				sys.exit()
+				sys.exit(1)
 
 			byte_values, width, height = extract_binary(image_path)
 

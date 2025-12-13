@@ -17,6 +17,7 @@ run : all
 
 scripts/poke_into_img.sh:
 	python3.12 scripts/gen_sprite_data.py
+	python3.12 scripts/gen_level_data.py
 
 os.img : src/boot/boot.bin src/boot/setup.bin kernel.bin scripts/poke_into_img.sh
 	cat $^ > $@

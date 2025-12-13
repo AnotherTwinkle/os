@@ -1,10 +1,10 @@
-{
+{   
     "tileSize": 16,
     "mapWidth": 16,
     "mapHeight": 12,
     "layers": [
         {
-            "name": "colliders|colliders",
+            "name": "colliders",
             "tiles": [
                 {
                     "id": "0",

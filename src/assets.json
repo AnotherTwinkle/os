@@ -42,6 +42,14 @@
 					"unit_width" : 16,
 					"unit_height" : 16
 				}
+			],
+			"levels" : [
+				{
+					"name" : "level0",
+					"width_t" : 16,
+					"height_t" : 12,
+					"tile_size" : 16
+				}
 			]
 
 		}

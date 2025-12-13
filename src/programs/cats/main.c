@@ -21,12 +21,16 @@ static u8 *next_buffer = arr_next_buffer;
 
 static int KBD_SUB_ID;
 
+Level* cur_level = &level0;
+
 Camera camera = {
 	.posx = 0.0f,
 	.posy = 0.0f,
-
+	
 	.dx = 0.0f,
 	.dy = 0.0f,
+
+	.zoom = 1.0f,
 
 	.is_following_entity = 0,
 	.following_dx = 0x0,
@@ -39,16 +43,16 @@ Camera camera = {
 	.move_dy = 0.0f
 };
 
-void world_draw_sprite(SpriteSheet *sheet, int idx, float x, float y, int scale) {
+void world_draw_sprite(SpriteSheet *sheet, int idx, float x, float y, float scale) {
 	int screen_x  = (int)roundf((x - camera.posx) * TILE_SIZE * scale);
 	int screen_y  = (int)roundf((y - camera.posy) * TILE_SIZE * scale);
-	pml_draw_sprite(sheet, idx, screen_x, screen_y, scale);
+	pml_draw_sprite(sheet, idx, screen_x, screen_y, roundf(scale));
 }
 
-void world_draw_sprite_ca(SpriteSheet *sheet, int idx, float x, float y, int scale) {
+void world_draw_sprite_ca(SpriteSheet *sheet, int idx, float x, float y, float scale) {
 	int screen_x  = (int)roundf((x - camera.posx) * TILE_SIZE * scale);
 	int screen_y  = (int)roundf((y - camera.posy) * TILE_SIZE * scale);
-	pml_draw_sprite_ca(sheet, idx, screen_x, screen_y, scale);
+	pml_draw_sprite_ca(sheet, idx, screen_x, screen_y, roundf(scale));
 }
 
 
@@ -78,7 +82,7 @@ void PROGRAM_CAT_MAIN() {
 	Cat cats[4];
 	for (int i = 0; i < 4; i++) {
 		cats[i].posx = 3.125f;
-		cats[i].posy = 1.25 + i;
+		cats[i].posy = 3 + i;
 		cats[i].dx = 0;
 		cats[i].dy = 0;
 		cats[i].type = 0;
@@ -94,9 +98,23 @@ void PROGRAM_CAT_MAIN() {
 			);
 	}
 
-	camera_follow_entity(&camera, &cats[0].dx, &cats[0].dy);
-	//camera_move_to(&camera, 4, 2, 0.02f);
+	// camera_follow_entity(&camera, &cats[0].dx, &cats[0].dy);
+	// camera_move_to(&camera, 4, 2, 0.02f);
 	while(1) {
+		// Keyboard
+		u8 kbd_result = kbd_dequeue(&kbd_queue, KBD_SUB_ID, &event);
+		if (kbd_result != 0 && (event.flags & KBD_FLAG_MAKE)) {
+			float camera_speed = 0.2f;
+			float zoom_speed = 1;
+			if (event.code == KEY_W) camera.posy -= camera_speed;
+			if (event.code == KEY_S) camera.posy += camera_speed;
+			if (event.code == KEY_A) camera.posx -= camera_speed;
+			if (event.code == KEY_D) camera.posx += camera_speed;
+
+			if (event.code == KEY_Q) camera.zoom += zoom_speed;
+			if (event.code == KEY_E) camera.zoom -= zoom_speed;
+		}
+
 		// Update
 		for (int i = 0; i < 4; i++) {
 			cat_update(&cats[i]);
@@ -104,9 +122,14 @@ void PROGRAM_CAT_MAIN() {
 
 		// RENDERING
 		pml_draw_rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0xff);
-		for (int x = 0; x < VIEWPORT_WIDTH_TILES + 1; x++) {
-			for (int y = 0; y < VIEWPORT_HEIGHT_TILES + 1; y++) {
-				world_draw_sprite(&level0_sprites, 16, x, y, SCALE);
+		for (int x = 0; x < cur_level->width_t; x++) {
+			for (int y = 0; y < cur_level->height_t; y++) {
+				for (int l = 0; l < cur_level->layer_count; l++) {
+					s16 sprite = cur_level->rendering_layers[l][x*cur_level->height_t + y];
+					if (sprite < 0) continue;
+					world_draw_sprite(cur_level->spritesheet, sprite, x, y, camera.zoom);
+				}
+				// world_draw_sprite(cur_level->spritesheet, 16, x, y, SCALE);
 				// pml_draw_rect(x, y, 16*);
 			}
 		}
@@ -118,7 +141,7 @@ void PROGRAM_CAT_MAIN() {
 		// }
 
 		for (int i = 0; i < 4; i++) {
-			draw_cat(&cats[i], SCALE);	
+			draw_cat(&cats[i], camera.zoom);	
 		}
 		
 
