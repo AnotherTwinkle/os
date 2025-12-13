@@ -5,6 +5,7 @@
 #include "kernel/pit.h"
 
 #include "graphics/pomelo.h"
+#include "entity.h"
 #include "sprites.h"
 #include "anim.h"
 
@@ -16,13 +17,8 @@
 #define CAT_SITTING_DOWN 5
 
 typedef struct Cat {
-	float posx, posy;
+	Entity base;
 	float dx, dy; // Amount moved last tick
-	AnimState anim_state;
-	SpriteSheet *spritesheet;
-	u8  type;
-	u8  state;
-	u8  orientation;
 } Cat;
 
 // Defined animations
@@ -32,8 +28,13 @@ extern Animation anim_curled_sleep;
 extern Animation anim_sitting;
 extern Animation anim_walking_left;
 extern Animation anim_walking_right;
+extern Animation anim_walking_up;
+extern Animation anim_walking_down;
 
-void cat_update(Cat *cat);
-void draw_cat(Cat *cat, int scale);
+void cat_walk_update(Entity* e);
+void cat_walk_think(Entity* e);
+
+void cat_idle_update(Entity* e);
+void cat_idle_think(Entity* e);
 
 #endif

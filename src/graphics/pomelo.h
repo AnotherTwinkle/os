@@ -29,4 +29,6 @@ void pml_draw_rect_ca(int x, int y, int w, int h, u8 color);
 void pml_draw_sprite(SpriteSheet *sheet, int idx, int x, int y, int scale);
 void pml_draw_sprite_ca(SpriteSheet *sheet, int idx, int x, int y, int scale);
 
+void pml_draw_sprite_colored(SpriteSheet *sheet, int idx, int x, int y, int scale, u8 color);
+void pml_draw_sprite_ca_colored(SpriteSheet *sheet, int idx, int x, int y, int scale, u8 color);
 #endif

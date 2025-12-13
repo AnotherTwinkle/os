@@ -91,3 +91,36 @@ void pml_draw_sprite_ca(SpriteSheet *sheet, int idx, int x, int y, int scale) {
 
     pml_draw_sprite(sheet, idx, adj_x, adj_y, scale);
 }
+
+void pml_draw_sprite_colored(SpriteSheet *sheet, int idx, int x, int y, int scale, u8 color) {
+	int width = sheet->width;
+	int height = sheet->height;
+	int unit_width = sheet->unit_width;
+	int unit_height = sheet->unit_height;
+
+	int sprite_x = (idx % (width/unit_width)) * unit_width;
+	int sprite_y = (idx / (width/unit_width)) * unit_height;
+
+	int sx = sprite_x;
+	for (int xx = x; xx < (x + unit_width * scale); xx += scale, sx++) {
+		for (int yy = y, sy = sprite_y; yy < (y + unit_height * scale); yy += scale, sy++) {
+			u8 orig_color = sheet->data[sy * width + sx];
+			if (orig_color) pml_draw_rect(xx, yy, scale, scale, color);
+
+			
+			// if (xx == (x + (unit_width-1) * scale) || yy == (y + (unit_height-1) * scale) ||
+			// 	xx == x || yy == y) pml_draw_rect(xx, yy, scale, scale, BLACK);
+		}
+	}
+}
+
+void pml_draw_sprite_ca_colored(SpriteSheet *sheet, int idx, int x, int y, int scale, u8 color) {
+    int unit_width = sheet->unit_width;
+    int unit_height = sheet->unit_height;
+
+    // Adjust x and y to the top-left corner for centering
+    int adj_x = x - (unit_width * scale) / 2;
+    int adj_y = y - (unit_height * scale) / 2;
+
+    pml_draw_sprite_colored(sheet, idx, adj_x, adj_y, scale, color);
+}

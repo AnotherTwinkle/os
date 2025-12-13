@@ -1,3 +1,6 @@
+#ifndef CAMERA_H
+#define CAMERA_H
+
 #include "kernel/util.h"
 
 typedef struct Camera {
@@ -22,7 +25,9 @@ typedef struct Camera {
 
 
 
-void update_camera(Camera* camera);
+void camera_update(Camera* camera);
 void camera_follow_entity(Camera* camera, float* entity_dx, float* entity_dy);
 void free_camera(Camera* camera);
 void camera_move_to(Camera*, float x, float y, float speed);
+
+#endif // CAMERA_H

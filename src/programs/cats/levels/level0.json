@@ -4,7 +4,7 @@
     "mapHeight": 12,
     "layers": [
         {
-            "name": "colliders",
+            "name": "colliders|hover",
             "tiles": [
                 {
                     "id": "0",

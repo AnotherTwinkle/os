@@ -72,66 +72,104 @@ Animation anim_walking_right = {
 	.loop_start_frame = 0
 };
 
+// Cat walking up
+u32 walking_up_frames[] = {8, 9, 10, 11};
+u32 walking_up_durations[] = {12, 12, 12, 12};
+Animation anim_walking_up = {
+	.frames = walking_up_frames,
+	.durations = walking_up_durations,
+	.length = 4,
+	.loop = 1,
+	.loop_start_frame = 0
+};
 
-void cat_update(Cat* cat) {
-	if (cat->state == CAT_WALKING) {
-		float speed = 0.03f; // per tick
-		float old_posx = cat->posx;
-		float old_posy = cat->posy;
-		if (cat->orientation == FACING_RIGHT) {
-			cat->posx += speed;
-		}
-		else if (cat->orientation == FACING_LEFT) {
-			cat->posx -= speed;
-		}
+// Cat walking down
+u32 walking_down_frames[] = {0, 1, 2, 3};
+u32 walking_down_durations[] = {12, 12, 12, 12};
+Animation anim_walking_down = {
+	.frames = walking_down_frames,
+	.durations = walking_down_durations,
+	.length = 4,
+	.loop = 1,
+	.loop_start_frame = 0
+};
 
-		else if (cat->orientation == FACING_UP) {
-			cat->posy -= speed;
-		}
 
-		else if (cat->orientation == FACING_DOWN) {
-			cat->posy += speed;
-		}
-
-		cat->dx = cat->posx - old_posx;
-		cat->dy = cat->posy - old_posy;
-
-		if (cat->posx + 1 > cur_level->width_t) {
-			cat->orientation = FACING_LEFT;
-			set_anim(&cat->anim_state, &anim_walking_left);
-		}
-
-		if (cat->posx - 1 < 0) {
-			cat->orientation = FACING_RIGHT;
-			set_anim(&cat->anim_state, &anim_walking_right);
-		}
+void cat_walk_update(Entity *e) {
+	Cat *cat = (Cat *)e;
+	float speed = 0.03f; // per tick
+	float old_x = cat->base.x;
+	float old_y = cat->base.y;
+	if (cat->base.orientation == FACING_RIGHT) {
+		cat->base.x += speed;
+	}
+	else if (cat->base.orientation == FACING_LEFT) {
+		cat->base.x -= speed;
 	}
 
-	if (cat->state == CAT_WALKING && randint(1, 10000) < 10) {
-		cat->orientation = FACING_DOWN;
-		cat->state = CAT_SITTING_DOWN;
-		set_anim(&cat->anim_state, &anim_sitting);
+	else if (cat->base.orientation == FACING_UP) {
+		cat->base.y -= speed;
 	}
 
-	if (cat->state == CAT_SITTING_DOWN && cat->anim_state.looping == 1) {
-		cat->state = CAT_IDLE;
+	else if (cat->base.orientation == FACING_DOWN) {
+		cat->base.y += speed;
 	}
 
-	int chance = randint(0, 1000);
-	if (chance < 30 && cat->state == CAT_IDLE && cat->anim_state.looping_for > 5) {
-		set_anim(&cat->anim_state, &anim_licking);
-		cat->state = CAT_LICKING;
-	}
+	cat->dx = cat->base.x - old_x;
+	cat->dy = cat->base.y - old_y;
 
-	if (chance < 10 && cat->state == CAT_LICKING && cat->anim_state.looping_for > 20) {
-		set_anim(&cat->anim_state, &anim_curled_sleep);
-		cat->state = CAT_CURLED;
-	}
-	update_anim(&cat->anim_state);
+	update_anim(&cat->base.anim_state);
 }
 
-void draw_cat(Cat *cat, int scale) {
-	u32 idx = cat->anim_state.anim->frames[cat->anim_state.frame];
-	world_draw_sprite_ca(cat->spritesheet, idx, cat->posx, cat->posy, scale);
+void cat_walk_think(Entity *e) {
+	Cat *cat = (Cat *)e;
+	if (cat->base.x + 1 > cur_level_ptr->width_t ||
+		is_pos_collider(cur_level_ptr, cat->base.x + 1, cat->base.y)) {
+		cat->base.orientation = FACING_LEFT;
+		set_anim(&cat->base.anim_state, &anim_walking_left);
+	}
+
+	if (cat->base.x - 1 < 0 ||
+		is_pos_collider(cur_level_ptr, cat->base.x - 1, cat->base.y)) {
+		cat->base.orientation = FACING_RIGHT;
+		set_anim(&cat->base.anim_state, &anim_walking_right);
+	}
+
+	if (cat->base.y + 1 > cur_level_ptr->height_t ||
+		is_pos_collider(cur_level_ptr, cat->base.x, cat->base.y + 1)) {
+		cat->base.orientation = FACING_UP;
+		set_anim(&cat->base.anim_state, &anim_walking_up);
+	}
+
+	if (cat->base.y - 1 < 0 ||
+		is_pos_collider(cur_level_ptr, cat->base.x, cat->base.y - 1)) {
+		cat->base.orientation = FACING_DOWN;
+		set_anim(&cat->base.anim_state, &anim_walking_down);
+	}
+
+	if (randint(0, 100) < 1) {
+		cat->base.think = cat_idle_think;
+		cat->base.update = cat_idle_update;
+		cat->base.next_think = TICKS + 20;
+		set_anim(&cat->base.anim_state, &anim_sitting);
+	}
+
+	cat->base.next_think = TICKS + 10;
 }
 
+void cat_idle_think(Entity *e) {
+	e->next_think = TICKS + 10;
+
+	int chance = randint(1, 100);
+	if (chance < 30 && e->anim_state.anim == &anim_sitting && e->anim_state.looping_for > 5) {
+		set_anim(&e->anim_state, &anim_licking);
+	}
+
+	if (chance < 10 && e->anim_state.anim == &anim_licking && e->anim_state.looping_for > 20) {
+		set_anim(&e->anim_state, &anim_curled_sleep);
+	}
+}
+
+void cat_idle_update(Entity *e) {
+	update_anim(&e->anim_state);
+}

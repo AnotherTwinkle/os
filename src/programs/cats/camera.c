@@ -1,5 +1,6 @@
 #include "kernel/util.h"
 #include "camera.h"
+#include "main.h"
 
 // Quake?
 static float Q_rsqrt(float number)
@@ -20,7 +21,7 @@ static float Q_rsqrt(float number)
 }
 
 
-void update_camera(Camera* camera) {
+void camera_update(Camera* camera) {
     float old_x = camera->posx;
     float old_y = camera->posy;
 
@@ -54,6 +55,18 @@ void update_camera(Camera* camera) {
         if (camera->posx == camera->target_x &&
             camera->posy == camera->target_y) {
             camera->is_moving_to_point = 0;
+        }
+    } else { // Camera is free
+        if (kbd_result != 0 && (kbd_event.flags & KBD_FLAG_MAKE)) {
+            float camera_speed = 0.2f;
+            float zoom_speed = 1;
+            if (kbd_event.code == KEY_W) camera->posy -= camera_speed;
+            if (kbd_event.code == KEY_S) camera->posy += camera_speed;
+            if (kbd_event.code == KEY_A) camera->posx -= camera_speed;
+            if (kbd_event.code == KEY_D) camera->posx += camera_speed;
+
+            if (kbd_event.code == KEY_Q) camera->zoom += zoom_speed;
+            if (kbd_event.code == KEY_E) camera->zoom -= zoom_speed;
         }
     }
 
