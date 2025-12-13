@@ -20,17 +20,18 @@ static u8 *cur_buffer = arr_cur_buffer;
 static u8 *next_buffer = arr_next_buffer;
 
 static int KBD_SUB_ID;
+static int AMOUNT_TICKS;
 
 Level* cur_level = &level0;
 
 Camera camera = {
 	.posx = 0.0f,
 	.posy = 0.0f,
-	
+
 	.dx = 0.0f,
 	.dy = 0.0f,
 
-	.zoom = 1.0f,
+	.zoom = 2,
 
 	.is_following_entity = 0,
 	.following_dx = 0x0,
@@ -46,13 +47,27 @@ Camera camera = {
 void world_draw_sprite(SpriteSheet *sheet, int idx, float x, float y, float scale) {
 	int screen_x  = (int)roundf((x - camera.posx) * TILE_SIZE * scale);
 	int screen_y  = (int)roundf((y - camera.posy) * TILE_SIZE * scale);
-	pml_draw_sprite(sheet, idx, screen_x, screen_y, roundf(scale));
+	if (screen_x > SCREEN_WIDTH || screen_y > SCREEN_HEIGHT || screen_x+sheet->unit_width < 0 || screen_y+sheet->unit_height < 0) return;
+
+	pml_draw_sprite(sheet, idx, screen_x, screen_y, scale);
 }
 
 void world_draw_sprite_ca(SpriteSheet *sheet, int idx, float x, float y, float scale) {
 	int screen_x  = (int)roundf((x - camera.posx) * TILE_SIZE * scale);
 	int screen_y  = (int)roundf((y - camera.posy) * TILE_SIZE * scale);
-	pml_draw_sprite_ca(sheet, idx, screen_x, screen_y, roundf(scale));
+	int unit_width = sheet->unit_width;
+	int unit_height = sheet->unit_height;
+
+	int adj_x = (unit_width * scale) / 2;
+    int adj_y = (unit_height * scale) / 2;
+
+	if ((screen_x - adj_x > SCREEN_WIDTH) ||
+		(screen_y - adj_y > SCREEN_HEIGHT) ||
+		(screen_x + adj_x < 0) ||
+		(screen_y + adj_y < 0)) {
+		return;
+	}
+	pml_draw_sprite_ca(sheet, idx, screen_x, screen_y, scale);
 }
 
 
@@ -129,8 +144,6 @@ void PROGRAM_CAT_MAIN() {
 					if (sprite < 0) continue;
 					world_draw_sprite(cur_level->spritesheet, sprite, x, y, camera.zoom);
 				}
-				// world_draw_sprite(cur_level->spritesheet, 16, x, y, SCALE);
-				// pml_draw_rect(x, y, 16*);
 			}
 		}
 
@@ -169,9 +182,9 @@ void PROGRAM_CAT_MAIN() {
 		for (int i = 0; i < (int)cats[0].posy; i++) {
 			pml_draw_rect(4*i, 40, 2, 2, 0xff);
 		}
-
 		update_camera(&camera);
 		sleep(10);
+		AMOUNT_TICKS+=1;
 		SWAP();
 	}
 }

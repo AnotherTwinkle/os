@@ -74,10 +74,9 @@ void pml_draw_sprite(SpriteSheet *sheet, int idx, int x, int y, int scale) {
 			u8 color = sheet->data[sy * width + sx];
 			pml_draw_rect(xx, yy, scale, scale, color);
 
-			/*
-			if (xx == (x + (unit_width-1) * scale) || yy == (y + (unit_height-1) * scale) ||
-				xx == x || yy == y) pml_draw_rect(xx, yy, scale, scale, BLACK);
-			*/
+			
+			// if (xx == (x + (unit_width-1) * scale) || yy == (y + (unit_height-1) * scale) ||
+			// 	xx == x || yy == y) pml_draw_rect(xx, yy, scale, scale, BLACK);
 		}
 	}
 }

@@ -107,7 +107,7 @@ void cat_update(Cat* cat) {
 		}
 	}
 
-	if (0 && cat->state == CAT_WALKING && randint(1, 10000) < 10) {
+	if (cat->state == CAT_WALKING && randint(1, 10000) < 10) {
 		cat->orientation = FACING_DOWN;
 		cat->state = CAT_SITTING_DOWN;
 		set_anim(&cat->anim_state, &anim_sitting);

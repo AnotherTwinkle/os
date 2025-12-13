@@ -7,7 +7,7 @@ typedef struct Camera {
 	float dx;
 	float dy;
 
-	float zoom;
+	int zoom;
 
 	int is_following_entity;
 	float* following_dx;
