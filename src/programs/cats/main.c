@@ -100,7 +100,7 @@ void PROGRAM_CAT_MAIN() {
 	        break;
 
 	    cat->base.y = 3.125f;
-	    cat->base.x = 2 + i;
+	    cat->base.x = 2.5 + i;
 	    cat->base.state = CAT_WALKING;
 	    cat->base.orientation = (i % 2) ? FACING_UP : FACING_DOWN;
 	    cat->base.spritesheet = cat_sprites[i];
@@ -117,14 +117,13 @@ void PROGRAM_CAT_MAIN() {
 	            : &anim_walking_down
 	    );
 
-	    cat->dx = 0;
+	    cat->dx = 0;camera->posx = min(camera->posx, (float)cur_level_ptr->width_t - ((float)SCREEN_WIDTH)/(16.0f*camera->zoom) - 2);
+            
 	    cat->dy = 0;
 
 	    entity_add(&cat->base);
 	}
 
-	// camera_follow_entity(&camera, &cats[0].dx, &cats[0].dy);
-	// camera_move_to(&camera, 4, 2, 0.02f);
 	while(1) {
 		// Keyboard
 		kbd_result = kbd_dequeue(&kbd_queue, KBD_SUB_ID, &kbd_event);
@@ -194,6 +193,10 @@ void PROGRAM_CAT_MAIN() {
 
 		for (int i = 0; i < (int)active_entities[0]->y; i++) {
 			pml_draw_rect(4*i, 40, 2, 2, 0xff);
+		}
+
+		if (TICKS % 2 == 0) {
+			pml_draw_rect(4, 48, 8, 8, 0xff);
 		}
 		
 		camera_update(&camera);

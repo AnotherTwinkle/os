@@ -35,7 +35,6 @@ void camera_update(Camera* camera) {
         float nx = camera->posx + camera->move_dx;
         float ny = camera->posy + camera->move_dy;
 
-        // --- Snap X ---
         if ((camera->move_dx > 0 && nx >= camera->target_x) ||
             (camera->move_dx < 0 && nx <= camera->target_x)) {
             camera->posx = camera->target_x;
@@ -43,7 +42,6 @@ void camera_update(Camera* camera) {
             camera->posx = nx;
         }
 
-        // --- Snap Y ---
         if ((camera->move_dy > 0 && ny >= camera->target_y) ||
             (camera->move_dy < 0 && ny <= camera->target_y)) {
             camera->posy = camera->target_y;
@@ -67,6 +65,14 @@ void camera_update(Camera* camera) {
 
             if (kbd_event.code == KEY_Q) camera->zoom += zoom_speed;
             if (kbd_event.code == KEY_E) camera->zoom -= zoom_speed;
+
+            camera->zoom = min(3, max(1, camera->zoom));
+
+            camera->posx = min(camera->posx, (float)cur_level_ptr->width_t - ((float)SCREEN_WIDTH)/(16.0f*camera->zoom) - 2);
+            camera->posx = max(camera->posx, 1);
+
+            camera->posy = min(camera->posy, (float)cur_level_ptr->height_t - ((float)SCREEN_HEIGHT)/(16.0f*camera->zoom) - 2);
+            camera->posy = max(0, camera->posy);
         }
     }
 

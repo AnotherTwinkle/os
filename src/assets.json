@@ -38,7 +38,7 @@
 				{
 					"name" : "level0",
 					"width" : 128,
-					"height" : 112,
+					"height" : 320,
 					"unit_width" : 16,
 					"unit_height" : 16
 				}
@@ -46,8 +46,8 @@
 			"levels" : [
 				{
 					"name" : "level0",
-					"width_t" : 16,
-					"height_t" : 12,
+					"width_t" : 40,
+					"height_t" : 26,
 					"tile_size" : 16
 				}
 			]
